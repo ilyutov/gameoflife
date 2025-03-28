@@ -1,4 +1,4 @@
-class State
+class World
   attr_reader :dim
 
   def initialize(dim)
@@ -7,10 +7,14 @@ class State
   end
 
   def [](i, j)
+    i %= dim
+    j %= dim
     @state[i * dim + j]
   end
 
   def []=(i, j, value)
+    i %= dim
+    j %= dim
     @state[i * dim + j] = value
   end
 
@@ -26,6 +30,12 @@ class State
       self[i+1, j+1],
     ]
   end
+
+  def randomize!(rng)
+    @state.size.times do |i|
+      @state[i] = rng.rand(2) == 1
+    end
+  end
 end
 
 class Game
@@ -33,19 +43,15 @@ class Game
   DEAD = "\u25FE"
   CLEAR = "\e[1A\e[K"
 
-  attr_reader :dim
+  attr_reader :dim, :world
 
   def initialize(dim:, seed:, buffer:)
     @dim = dim
-    @state = State.new(dim)
+    @world = World.new(dim)
     @buffer = buffer
 
     rng = Random.new(seed)
-    dim.times do |i|
-      dim.times do |j|
-        @state[i,j] = rng.rand(2) == 1
-      end
-    end
+    world.randomize!(rng)
   end
 
   def run
@@ -60,22 +66,22 @@ class Game
   end
 
   def next!
-    next_state = State.new(dim)
+    new_world = World.new(dim)
 
     dim.times do |i|
       dim.times do |j|
-        cell = @state[i,j]
-        live_neighbours = @state.neighbours(i,j).count(true)
+        cell = world[i,j]
+        live_neighbours = world.neighbours(i,j).count(true)
         if cell
           cell = live_neighbours == 2 || live_neighbours == 3
         else
           cell = live_neighbours == 3
         end
-        next_state[i,j] = cell
+        new_world[i,j] = cell
       end
     end
 
-    @state = next_state
+    @world = new_world
   end
 
   def render
@@ -83,7 +89,7 @@ class Game
 
     dim.times do |i|
       dim.times do |j|
-        @buffer.print @state[i,j] ? LIVE : DEAD
+        @buffer.print world[i,j] ? LIVE : DEAD
       end
       print "\n"
     end
