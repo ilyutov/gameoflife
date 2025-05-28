@@ -25,9 +25,6 @@ const World = struct {
 };
 
 pub fn main() void {
-    // var general_purpose_allocator = std.heap.GeneralPurposeAllocator(.{}){};
-    // defer std.debug.assert(general_purpose_allocator.deinit() == .ok);
-
     var world = World.init();
     render(world);
 
@@ -40,7 +37,7 @@ pub fn main() void {
 }
 
 fn randomState() TState {
-    var state: TState = [_][DIM]bool{[_]bool{false} ** DIM} ** DIM; // alloc
+    var state: TState = [_][DIM]bool{[_]bool{undefined} ** DIM} ** DIM;
     for (state, 0..) |row, i| {
         for (row, 0..) |_, j| {
             state[i][j] = rand.boolean();
@@ -50,11 +47,11 @@ fn randomState() TState {
 }
 
 fn nextState(prev: TState) TState {
-    var next: TState = [_][DIM]bool{[_]bool{false} ** DIM} ** DIM; // alloc
+    var next: TState = [_][DIM]bool{[_]bool{undefined} ** DIM} ** DIM;
 
     for (prev, 0..) |row, i| {
         for (row, 0..) |cell, j| {
-            const neighbours = liveNeighbours(prev, @truncate(i), @truncate(j));
+            const neighbours = liveNeighbours(prev, @intCast(i), @intCast(j));
             if (cell) {
                 next[i][j] = neighbours == 2 or neighbours == 3;
             } else {
